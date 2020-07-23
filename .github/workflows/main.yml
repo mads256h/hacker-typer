@@ -34,4 +34,4 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           #useVcpkgToolchainFile: true
           buildWithCMakeArgs: '-- -v'
-          buildDirectory: '${{ runner.workspace }}/b/ninja/'
+          buildDirectory: '${{ github.workspace }}/b/ninja/'
