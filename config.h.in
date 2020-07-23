@@ -1,0 +1,4 @@
+#define HackerTyper_VERSION_MAJOR @HackerTyper_VERSION_MAJOR@
+#define HackerTyper_VERSION_MINOR @HackerTyper_VERSION_MINOR@
+
+#define CHARS_TO_READ 5
