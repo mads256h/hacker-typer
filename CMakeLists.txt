@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 ${SHARED_FLAGS}")
 endif()
 
 
-configure_file(config.h.in config.h)
+configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h @ONLY)
 
 add_executable(HackerTyper hackertyper.cpp)
 
