@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <cstdlib>
+
 #if defined(UNIX) || defined(__unix__) || defined(LINUX) || defined(__linux__)
 #define OS_UNIX
 #endif
@@ -12,6 +14,43 @@
 #else
 #include <conio.h>
 #endif
+
+void print_help(char *program_name);
+
+void initialize();
+
+void wait_and_print(char *const buf, size_t size);
+
+void loop(std::ifstream &file);
+
+void cleanup();
+
+int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    print_help(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  if (std::strcmp(argv[1], "-h") == 0 || std::strcmp(argv[1], "--help") == 0) {
+    print_help(argv[0]);
+    return EXIT_SUCCESS;
+  }
+
+  std::ifstream file{argv[1]};
+
+  if (!file) {
+    std::cerr << "Could not open file!" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  initialize();
+
+  loop(file);
+
+  cleanup();
+
+  return 0;
+}
 
 void print_help(char *program_name) {
   // Print version
@@ -25,35 +64,8 @@ void print_help(char *program_name) {
             << "  " << program_name << " -h/--help" << std::endl;
 }
 
-void loop(const char *file_name);
-
-int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    print_help(argv[0]);
-    return 1;
-  }
-
-  if (std::strcmp(argv[1], "-h") == 0 || std::strcmp(argv[1], "--help") == 0) {
-    print_help(argv[0]);
-    return 0;
-  }
-
-  loop(argv[1]);
-
-  return 0;
-}
-
-void cleanup() {
-// Clean up ncurses
-#ifdef OS_UNIX
-  clrtoeol();
-  refresh();
-  endwin();
-#endif
-}
-
-void loop(const char *file_name) {
-// Initialize ncurses
+void initialize() {
+  // Initialize ncurses
 #ifdef OS_UNIX
   initscr();
   clear();
@@ -64,14 +76,21 @@ void loop(const char *file_name) {
   idlok(stdscr, TRUE);
   scrollok(stdscr, TRUE);
 #endif
+}
 
-  std::ifstream file{file_name};
+void wait_and_print(char *const buf, size_t size) {
+#ifdef OS_UNIX
+  // ncurses print
+  getch();                  // wait for input
+  addnstr(buf, size); // print string
+#else
+  _getch();
+  std::cout.write(buf, size);
+  std::cout << std::flush;
+#endif
+}
 
-  if (!file) {
-    cleanup();
-    std::cerr << "Could not open file!" << std::endl;
-    return;
-  }
+void loop(std::ifstream &file) {
 
   char buf[CHARS_TO_READ];
 
@@ -80,16 +99,16 @@ void loop(const char *file_name) {
   do {
     chars_read = file.read(buf, CHARS_TO_READ).gcount();
 
-// ncurses print
-#ifdef OS_UNIX
-    getch();                  // wait for input
-    addnstr(buf, chars_read); // print string
-#else
-    _getch();
-    std::cout.write(buf, chars_read);
-    std::cout << std::flush;
-#endif
-  } while (chars_read == CHARS_TO_READ);
+    wait_and_print(buf, chars_read);
 
-  cleanup();
+  } while (chars_read == CHARS_TO_READ);
+}
+
+void cleanup() {
+// Clean up ncurses
+#ifdef OS_UNIX
+  clrtoeol();
+  refresh();
+  endwin();
+#endif
 }
