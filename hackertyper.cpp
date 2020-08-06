@@ -19,7 +19,7 @@ void print_help(char *program_name);
 
 void initialize();
 
-void wait_and_print(char *const buf, size_t size);
+bool wait_and_print(char *const buf, size_t size);
 
 void loop(std::ifstream &file);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   cleanup();
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 // Prints usage/help
@@ -80,16 +80,19 @@ void initialize() {
 }
 
 // Waits for user input and then prints the contents of the buffer
-void wait_and_print(char *const buf, size_t size) {
+bool wait_and_print(char *const buf, size_t size) {
 #ifdef OS_UNIX
   // ncurses print
-  getch();            // wait for input
+  if (getch() == EXIT_KEY) // wait for input
+    return false;
   addnstr(buf, size); // print string
 #else
   _getch();                   // wait for input
   std::cout.write(buf, size); // print string
   std::cout << std::flush;    // flush to see it immediately
 #endif
+
+  return true;
 }
 
 // Prints CHARS_TO_READ characters when user presses a key until the file has
@@ -102,7 +105,8 @@ void loop(std::ifstream &file) {
   do {
     chars_read = file.read(buf, CHARS_TO_READ).gcount();
 
-    wait_and_print(buf, chars_read);
+    if (!wait_and_print(buf, chars_read))
+      break;
 
   } while (chars_read ==
            CHARS_TO_READ); // If we didn't read CHARS_TO_READ characters we most
