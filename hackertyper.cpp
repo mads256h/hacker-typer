@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+// Prints usage/help
 void print_help(char *program_name) {
   // Print version
   std::cout << program_name << " Version " << HackerTyper_VERSION_MAJOR << '.'
@@ -64,51 +65,56 @@ void print_help(char *program_name) {
             << "  " << program_name << " -h/--help" << std::endl;
 }
 
+// Does some platform specific initialization
 void initialize() {
   // Initialize ncurses
 #ifdef OS_UNIX
-  initscr();
-  clear();
-  noecho();
-  cbreak();
-  notimeout(stdscr, TRUE);
-  nodelay(stdscr, FALSE);
-  idlok(stdscr, TRUE);
-  scrollok(stdscr, TRUE);
+  initscr();               // Initialize ncurses and stdscr
+  clear();                 // Clear the terminal screen
+  noecho();                // Disable echoing typed characters
+  cbreak();                // Disable line buffering
+  notimeout(stdscr, TRUE); // Makes getch() wait indefinetly for user input
+  nodelay(stdscr, FALSE);  // Makes getch() a blocking call
+  scrollok(stdscr, TRUE);  // Enable scrolling
 #endif
 }
 
+// Waits for user input and then prints the contents of the buffer
 void wait_and_print(char *const buf, size_t size) {
 #ifdef OS_UNIX
   // ncurses print
-  getch();                  // wait for input
+  getch();            // wait for input
   addnstr(buf, size); // print string
 #else
-  _getch();
-  std::cout.write(buf, size);
-  std::cout << std::flush;
+  _getch();                   // wait for input
+  std::cout.write(buf, size); // print string
+  std::cout << std::flush;    // flush to see it immediately
 #endif
 }
 
+// Prints CHARS_TO_READ characters when user presses a key until the file has
+// been read completely.
 void loop(std::ifstream &file) {
 
-  char buf[CHARS_TO_READ];
-
-  size_t chars_read = 0;
+  char buf[CHARS_TO_READ]; // Holds the characters that gets printed
+  size_t chars_read = 0;   // How many characters we read
 
   do {
     chars_read = file.read(buf, CHARS_TO_READ).gcount();
 
     wait_and_print(buf, chars_read);
 
-  } while (chars_read == CHARS_TO_READ);
+  } while (chars_read ==
+           CHARS_TO_READ); // If we didn't read CHARS_TO_READ characters we most
+                           // likely have reached the end of the file
 }
 
+// Does some platform specific cleanup
 void cleanup() {
 // Clean up ncurses
 #ifdef OS_UNIX
-  clrtoeol();
-  refresh();
-  endwin();
+  clrtoeol(); // Clear the ncurses window
+  refresh();  // Refresh the ncurses window
+  endwin();   // Exits ncurses mode
 #endif
 }
