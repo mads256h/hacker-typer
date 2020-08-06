@@ -1,5 +1,5 @@
 # HackerTyper
-Hackertyper in the commandprompt
+Hackertyper in the commandprompt. Works on Windows and Linux
 
 Usage:
 ```
