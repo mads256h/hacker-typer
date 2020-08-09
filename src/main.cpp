@@ -10,14 +10,16 @@
 #include <cstdlib>
 #include <cstring>
 
-
 #if defined(UNIX) || defined(__unix__) || defined(LINUX) || defined(__linux__)
 #define OS_UNIX
 #endif
 #ifdef OS_UNIX
 #include <ncurses.h>
 #else
+#include <Windows.h>
 #include <conio.h>
+// Set to white as default
+WORD console_attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 #endif
 
 int main(const int argc, const char *argv[]) {
@@ -64,9 +66,9 @@ void print_help(const char *const program_name) {
 void initialize() {
   // Initialize ncurses
 #ifdef OS_UNIX
-  initscr();               // Initialize ncurses and stdscr
+  initscr(); // Initialize ncurses and stdscr
 
-  if (has_colors()){
+  if (has_colors()) {
     use_default_colors();
     start_color();
     init_pair(1, COLOR_GREEN, -1);
@@ -79,6 +81,17 @@ void initialize() {
   notimeout(stdscr, TRUE); // Makes getch() wait indefinetly for user input
   nodelay(stdscr, FALSE);  // Makes getch() a blocking call
   scrollok(stdscr, TRUE);  // Enable scrolling
+#else
+  const auto console = GetStdHandle(STD_OUTPUT_HANDLE);
+
+  // If we get console buffer info save the current console attributes else use
+  // defaults (white)
+  if (CONSOLE_SCREEN_BUFFER_INFO info;
+      GetConsoleScreenBufferInfo(console, &info)) {
+    console_attributes = info.wAttributes;
+  }
+
+  SetConsoleTextAttribute(console, FOREGROUND_GREEN);
 #endif
 }
 
@@ -90,7 +103,8 @@ bool wait_and_print(const char *const buf, std::streamsize size) {
     return false;
   addnstr(buf, static_cast<int>(size)); // print string
 #else
-  _getch();                   // wait for input
+  if (_getch() == EXIT_KEY) // wait for input
+    return false;
   std::cout.write(buf, size); // print string
   std::cout << std::flush;    // flush to see it immediately
 #endif
@@ -110,7 +124,8 @@ void loop(std::ifstream &file) {
   std::streamsize chars_read = 0; // How many characters we read
 
   do {
-    // Gets a random number between CHARS_TO_READ_MIN and CHARS_TO_READ_MAX inclusive
+    // Gets a random number between CHARS_TO_READ_MIN and CHARS_TO_READ_MAX
+    // inclusive
     chars_to_read = static_cast<std::streamsize>(
         (random() % ((CHARS_TO_READ_MAX + 1) - CHARS_TO_READ_MIN)) +
         CHARS_TO_READ_MIN);
@@ -130,13 +145,15 @@ void cleanup() {
 // Clean up ncurses
 #ifdef OS_UNIX
 
-  if (has_colors()){
+  if (has_colors()) {
     attroff(COLOR_PAIR(1));
-    reset_color_pairs();
   }
 
   clrtoeol(); // Clear the ncurses window
   refresh();  // Refresh the ncurses window
   endwin();   // Exits ncurses mode
+#else
+  const auto console = GetStdHandle(STD_OUTPUT_HANDLE);
+  SetConsoleTextAttribute(console, console_attributes);
 #endif
 }
