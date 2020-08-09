@@ -8,6 +8,8 @@
 #include <random>
 
 #include <cstdlib>
+#include <cstring>
+
 
 #if defined(UNIX) || defined(__unix__) || defined(LINUX) || defined(__linux__)
 #define OS_UNIX
@@ -63,6 +65,14 @@ void initialize() {
   // Initialize ncurses
 #ifdef OS_UNIX
   initscr();               // Initialize ncurses and stdscr
+
+  if (has_colors()){
+    use_default_colors();
+    start_color();
+    init_pair(1, COLOR_GREEN, -1);
+    attron(COLOR_PAIR(1));
+  }
+
   clear();                 // Clear the terminal screen
   noecho();                // Disable echoing typed characters
   cbreak();                // Disable line buffering
@@ -119,6 +129,12 @@ void loop(std::ifstream &file) {
 void cleanup() {
 // Clean up ncurses
 #ifdef OS_UNIX
+
+  if (has_colors()){
+    attroff(COLOR_PAIR(1));
+    reset_color_pairs();
+  }
+
   clrtoeol(); // Clear the ncurses window
   refresh();  // Refresh the ncurses window
   endwin();   // Exits ncurses mode
