@@ -3,7 +3,9 @@
 
 
 // How many chars we print each time the user strikes a key
-#define CHARS_TO_READ 5
+// Both values are inclusive
+#define CHARS_TO_READ_MIN 5
+#define CHARS_TO_READ_MAX 10
 
 // 27 is the escape key
 #define EXIT_KEY 27
