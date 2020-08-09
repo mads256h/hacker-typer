@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 # Set the project name to your project name, my project isn't very descriptive
-project(hacker-typer VERSION 1.1 LANGUAGES CXX)
+project(hacker-typer VERSION 1.2 LANGUAGES CXX)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 
