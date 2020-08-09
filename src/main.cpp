@@ -17,7 +17,10 @@
 #ifdef OS_UNIX
 #include <ncurses.h>
 #else
+#include <Windows.h>
 #include <conio.h>
+// Set to white as default
+WORD console_attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 #endif
 
 int main(const int argc, const char *argv[]) {
@@ -79,6 +82,16 @@ void initialize() {
   notimeout(stdscr, TRUE); // Makes getch() wait indefinetly for user input
   nodelay(stdscr, FALSE);  // Makes getch() a blocking call
   scrollok(stdscr, TRUE);  // Enable scrolling
+#else
+    const auto console = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    // If we get console buffer info save the current console attributes else use defaults (white)
+    if (CONSOLE_SCREEN_BUFFER_INFO info; GetConsoleScreenBufferInfo(console, &info))
+    {
+        console_attributes = info.wAttributes;
+    }
+
+    SetConsoleTextAttribute(console, FOREGROUND_GREEN);
 #endif
 }
 
@@ -90,7 +103,8 @@ bool wait_and_print(const char *const buf, std::streamsize size) {
     return false;
   addnstr(buf, static_cast<int>(size)); // print string
 #else
-  _getch();                   // wait for input
+    if (_getch() == EXIT_KEY) // wait for input
+        return false; 
   std::cout.write(buf, size); // print string
   std::cout << std::flush;    // flush to see it immediately
 #endif
@@ -138,5 +152,8 @@ void cleanup() {
   clrtoeol(); // Clear the ncurses window
   refresh();  // Refresh the ncurses window
   endwin();   // Exits ncurses mode
+#else
+    const auto console = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(console, console_attributes);
 #endif
 }
