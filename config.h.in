@@ -1,9 +1,0 @@
-#define HackerTyper_VERSION_MAJOR @HackerTyper_VERSION_MAJOR@
-#define HackerTyper_VERSION_MINOR @HackerTyper_VERSION_MINOR@
-
-
-// How many chars we print each time the user strikes a key
-#define CHARS_TO_READ 5
-
-// 27 is the escape key
-#define EXIT_KEY 27

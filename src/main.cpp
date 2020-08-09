@@ -1,8 +1,11 @@
+#include "main.h"
 #include "config.h"
 
+#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <random>
 
 #include <cstdlib>
 
@@ -15,17 +18,7 @@
 #include <conio.h>
 #endif
 
-void print_help(char *program_name);
-
-void initialize();
-
-bool wait_and_print(char *const buf, size_t size);
-
-void loop(std::ifstream &file);
-
-void cleanup();
-
-int main(int argc, char *argv[]) {
+int main(const int argc, const char *argv[]) {
   if (argc != 2) {
     print_help(argv[0]);
     return EXIT_FAILURE;
@@ -53,10 +46,10 @@ int main(int argc, char *argv[]) {
 }
 
 // Prints usage/help
-void print_help(char *program_name) {
+void print_help(const char *const program_name) {
   // Print version
-  std::cout << program_name << " Version " << HackerTyper_VERSION_MAJOR << '.'
-            << HackerTyper_VERSION_MINOR << std::endl;
+  std::cout << program_name << " Version " << hackertyper_VERSION_MAJOR << '.'
+            << hackertyper_VERSION_MINOR << std::endl;
 
   // Print usage
   std::cout << "Usage: " << std::endl
@@ -80,12 +73,12 @@ void initialize() {
 }
 
 // Waits for user input and then prints the contents of the buffer
-bool wait_and_print(char *const buf, size_t size) {
+bool wait_and_print(const char *const buf, std::streamsize size) {
 #ifdef OS_UNIX
   // ncurses print
   if (getch() == EXIT_KEY) // wait for input
     return false;
-  addnstr(buf, size); // print string
+  addnstr(buf, static_cast<int>(size)); // print string
 #else
   _getch();                   // wait for input
   std::cout.write(buf, size); // print string
@@ -98,18 +91,28 @@ bool wait_and_print(char *const buf, size_t size) {
 // Prints CHARS_TO_READ characters when user presses a key until the file has
 // been read completely.
 void loop(std::ifstream &file) {
+  const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-  char buf[CHARS_TO_READ]; // Holds the characters that gets printed
-  size_t chars_read = 0;   // How many characters we read
+  std::mt19937 random(static_cast<std::mt19937::result_type>(seed));
+
+  char buf[CHARS_TO_READ_MAX]; // Holds the characters that gets printed
+  std::streamsize chars_to_read = 0;
+  std::streamsize chars_read = 0; // How many characters we read
 
   do {
-    chars_read = file.read(buf, CHARS_TO_READ).gcount();
+    // Gets a random number between CHARS_TO_READ_MIN and CHARS_TO_READ_MAX inclusive
+    chars_to_read = static_cast<std::streamsize>(
+        (random() % ((CHARS_TO_READ_MAX + 1) - CHARS_TO_READ_MIN)) +
+        CHARS_TO_READ_MIN);
+
+    std::cerr << chars_to_read << std::endl;
+    chars_read = file.read(buf, chars_to_read).gcount();
 
     if (!wait_and_print(buf, chars_read))
       break;
 
   } while (chars_read ==
-           CHARS_TO_READ); // If we didn't read CHARS_TO_READ characters we most
+           chars_to_read); // If we didn't read CHARS_TO_READ characters we most
                            // likely have reached the end of the file
 }
 
