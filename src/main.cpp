@@ -105,7 +105,6 @@ void loop(std::ifstream &file) {
         (random() % ((CHARS_TO_READ_MAX + 1) - CHARS_TO_READ_MIN)) +
         CHARS_TO_READ_MIN);
 
-    std::cerr << chars_to_read << std::endl;
     chars_read = file.read(buf, chars_to_read).gcount();
 
     if (!wait_and_print(buf, chars_read))
