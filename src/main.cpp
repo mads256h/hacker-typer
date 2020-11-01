@@ -10,10 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(UNIX) || defined(__unix__) || defined(LINUX) || defined(__linux__)
-#define OS_UNIX
-#endif
-#ifdef OS_UNIX
+#ifdef UNIX
 #include <ncurses.h>
 #else
 #include <Windows.h>
@@ -65,7 +62,7 @@ void print_help(const char *const program_name) {
 // Does some platform specific initialization
 void initialize() {
   // Initialize ncurses
-#ifdef OS_UNIX
+#ifdef UNIX
   initscr(); // Initialize ncurses and stdscr
 
   if (has_colors()) {
@@ -97,7 +94,7 @@ void initialize() {
 
 // Waits for user input and then prints the contents of the buffer
 bool wait_and_print(const char *const buf, std::streamsize size) {
-#ifdef OS_UNIX
+#ifdef UNIX
   // ncurses print
   if (getch() == EXIT_KEY) // wait for input
     return false;
@@ -143,7 +140,7 @@ void loop(std::ifstream &file) {
 // Does some platform specific cleanup
 void cleanup() {
 // Clean up ncurses
-#ifdef OS_UNIX
+#ifdef UNIX
 
   if (has_colors()) {
     attroff(COLOR_PAIR(1));
