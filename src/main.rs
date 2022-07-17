@@ -2,26 +2,23 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use rand::prelude::*;
-use ncurses;
+use terminal::{error, Action, Clear, Color, Event, Value, Retrieved, KeyCode, Terminal};
 
-fn main() {
+fn main() -> error::Result<()>{
     let arguments: Vec<String> = env::args().collect();
 
     if arguments.len() != 2 {
         println!("USAGE: hacker-typer <file>");
-        return;
+        return Ok(());
     }
 
     let file_name = &arguments[1];
 
 
     let mut rng = rand::thread_rng();
-    initialize();
 
-    let mut file = match File::open(file_name) {
-        Err(why) => panic!("Cannot open file: {}", why),
-        Ok(file) => file,
-    };
+
+    let mut file = File::open(file_name)?;
 
     let mut contents : String = String::new();
 
@@ -30,46 +27,48 @@ fn main() {
         Ok(r) => r,
     };
 
-    let mut char = ncurses::getch();
-    while char != 27 {
-        char = ncurses::getch();
+    let mut term = terminal::stdout();
+    term.act(Action::ClearTerminal(Clear::All))?;
+    term.act(Action::SetForegroundColor(Color::Green))?;
+    term.act(Action::EnableRawMode)?;
+    term.act(Action::MoveCursorTo(0,0))?;
+
+
+    let mut key_code = wait_for_input(&term)?;
+
+    while key_code != KeyCode::Esc {
+        key_code = wait_for_input(&term)?;
 
         let wanted_chars = rng.gen_range(5..=10);
         let len = if contents.len() > wanted_chars { wanted_chars } else { contents.len() };
         if len == 0 { break; }
-        ncurses::addstr(&contents[0..len]);
+        term.write(contents[0..len].replace("\n", "\r\n").as_bytes())?;
+        term.flush()?;
         contents = contents[len..].to_string();
     }
-
     
 
-    cleanup();
+    //cleanup();
+    term.act(Action::ResetColor)?;
+    term.act(Action::DisableRawMode)?;
+
+    Ok(())
 }
 
-fn initialize() {
-    ncurses::initscr();
-
-    if ncurses::has_colors() {
-        ncurses::use_default_colors();
-        ncurses::start_color();
-        ncurses::init_pair(1, ncurses::COLOR_GREEN, -1);
-        ncurses::attron(ncurses::COLOR_PAIR(1));
+fn wait_for_input<W>(term : &Terminal<W>) -> error::Result<KeyCode>
+where W : Write
+{
+    loop {
+        if let Retrieved::Event(event) = term.get(Value::Event(None))? {
+            match event {
+                Some(e) => {
+                    match e {
+                        Event::Key(k) => return Ok(k.code),
+                        _ => {}
+                    }
+                }
+                _ => {}
+            };
+        }
     }
-
-    ncurses::clear();
-    ncurses::noecho();
-    ncurses::cbreak();
-    ncurses::notimeout(ncurses::stdscr(), true);
-    ncurses::nodelay(ncurses::stdscr(), false);
-    ncurses::scrollok(ncurses::stdscr(), true);
-}
-
-fn cleanup() {
-    if ncurses::has_colors() {
-        ncurses::attroff(ncurses::COLOR_PAIR(1));
-    }
-
-    ncurses::clrtoeol();
-    ncurses::refresh();
-    ncurses::endwin();
 }
